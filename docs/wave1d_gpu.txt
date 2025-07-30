@@ -1,0 +1,98 @@
+1D Wave Equation Solver on GPU
+==============================
+
+This document explains the Python code that numerically simulates a 1D wave 
+propagating in a bounded domain using a finite difference method. The simulation 
+is GPU-accelerated with CuPy and visualized with Matplotlib.
+
+--------------------------
+1. Mathematical Background
+--------------------------
+The 1D wave equation:
+   ∂²u/∂t² = c² ∂²u/∂x²
+
+where:
+- u(x, t) is the displacement at position x and time t.
+- c is the constant wave speed.
+
+This partial differential equation models physical phenomena like:
+- Vibrations on a stretched string.
+- Sound waves in a narrow pipe.
+- Seismic waves in a 1D medium.
+
+Analytical solutions often involve sine/cosine or d'Alembert's solution. 
+Here, we solve it numerically.
+
+--------------------------
+2. Numerical Method
+--------------------------
+The domain is discretized in both time and space:
+- Central finite differences for ∂²u/∂x² and ∂²u/∂t².
+- The Courant-Friedrichs-Lewy (CFL) condition enforces stability:
+    CFL = c * Δt / Δx ≤ 1
+
+Update rule (explicit method):
+   uⁿ⁺¹ = 2uⁿ - uⁿ⁻¹ + (CFL)² * (uⁿᵢ₊₁ - 2uⁿᵢ + uⁿᵢ₋₁)
+
+Boundary conditions:
+- Dirichlet BCs: u = 0 at both ends → perfect reflection.
+
+--------------------------
+3. Libraries Used
+--------------------------
+- **CuPy**: For GPU acceleration.
+- **NumPy**: CPU-side operations & compatibility.
+- **Matplotlib**: Animation of the wave propagation.
+
+--------------------------
+4. Domain & Simulation Setup
+--------------------------
+- L = 1.0: Length of the domain.
+- Nx = 500: Spatial grid points.
+- dx = L / Nx.
+- c = 1.0: Wave speed.
+- CFL = 0.9: For stability.
+- dt = CFL * dx / c.
+- Nt = 600: Number of time steps.
+
+--------------------------
+5. Initialization
+--------------------------
+- x = cp.linspace(0, L, Nx): 1D spatial grid.
+- u, u_prev, u_next: Arrays for current, previous, and next time step.
+- Initial condition: Gaussian pulse centered at x = 0.5.
+- Initial velocity: Zero, so u_prev = u.
+
+--------------------------
+6. Time Stepping Loop
+--------------------------
+Core update:
+   - Use finite difference to compute u_next for interior points.
+   - Enforce Dirichlet BCs: u_next[0] = u_next[-1] = 0.
+   - Shift time levels: u_prev ← u, u ← u_next.
+   - Plot every 100 steps to visualize propagation.
+
+Mathematical link:
+- The scheme approximates d'Alembert's solution numerically.
+- Reflections occur at the boundaries due to u = 0.
+- Wave energy is conserved within the numerical tolerance.
+
+--------------------------
+7. Visualization
+--------------------------
+- Dynamic plot shows wave splitting & reflecting.
+- The pulse splits into two traveling waves:
+   - One moving left, one right.
+   - They reflect at boundaries and interfere.
+- Matplotlib handles animation via plt.pause().
+
+--------------------------
+8. Expected Output
+--------------------------
+Console: None by default.
+
+Plot:
+- Initial Gaussian pulse.
+- Splits → reflects → re-forms.
+- Demonstrates wave propagation, superposition, reflection.
+

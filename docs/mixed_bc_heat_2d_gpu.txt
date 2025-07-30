@@ -1,0 +1,99 @@
+2D Heat Conduction with Mixed Boundary Conditions (GPU)
+=======================================================
+
+This document explains a Python script that simulates transient heat diffusion 
+in a 2D rectangular plate with *mixed boundary conditions*. It demonstrates 
+numerical solution of a PDE (partial differential equation) using GPU acceleration 
+(CuPy) and visualizes the result as a time-lapse animation with Matplotlib.
+
+---------------------------------------------------
+1. Governing Physics: 2D Transient Heat Equation
+---------------------------------------------------
+
+The physical phenomenon is governed by the time-dependent 2D heat conduction equation:
+
+    ∂T/∂t = α ( ∂²T/∂x² + ∂²T/∂y² )
+
+Where:
+- T(x, y, t) is temperature at point (x, y) and time t.
+- α is the thermal diffusivity of the material.
+
+ **Physical interpretation**:
+- ∂T/∂t → how fast temperature changes in time.
+- The Laplacian term ( ∂²T/∂x² + ∂²T/∂y² ) → net heat flux due to local temperature gradients.
+
+---------------------------------------------------
+2. Numerical Method: Explicit Finite Difference (FTCS)
+---------------------------------------------------
+
+The continuous domain is discretized onto a grid:
+- Δx = Lx / Nx, Δy = Ly / Ny: spatial grid spacing.
+- dt: time step size, constrained by stability condition.
+
+At each interior grid point, the update rule is:
+
+    Tᵢⱼⁿ⁺¹ = Tᵢⱼⁿ + α dt [ ( Tᵢ₊₁ⱼⁿ - 2Tᵢⱼⁿ + Tᵢ₋₁ⱼⁿ ) / Δx²
+                              + ( Tᵢⱼ₊₁ⁿ - 2Tᵢⱼⁿ + Tᵢⱼ₋₁ⁿ ) / Δy² ]
+
+Key constraint for stability:
+  α dt ( 1/Δx² + 1/Δy² ) ≤ 0.5
+
+This CFL-like limit ensures the explicit scheme does not diverge.
+
+---------------------------------------------------
+3. Boundary Conditions: Mixed Type
+---------------------------------------------------
+
+This example combines *Dirichlet* and *Neumann* conditions:
+
+**Dirichlet BCs (Fixed Temperature)**:
+- **Top edge:** T = 100.0 (hot).
+- **Bottom edge:** T = 0.0 (cold).
+- **Left edge:** T = sin(πy) * 100 → spatially varying.
+
+ **Neumann BC (Zero Gradient / Insulated)**:
+- **Right edge:** ∂T/∂x = 0 → physically means *no heat flux*.
+  Numerically: T[:, -1] = T[:, -2]
+
+This mix creates interesting, non-trivial heat flow patterns.
+
+---------------------------------------------------
+4. Code Structure: How It Works
+---------------------------------------------------
+
+**Grid Setup**
+- Nx, Ny: number of grid points.
+- Lx, Ly: plate dimensions.
+- X, Y: meshgrid for visualization.
+
+**Main Array**
+- T: CuPy array for temperatures → stays on GPU.
+- T_old: Copy of T at previous step → needed for update.
+
+**Time Loop**
+- For each step:
+  1. Save current T → T_old.
+  2. Apply FTCS update to all interior points.
+  3. Apply Dirichlet BCs (overwrite edges).
+  4. Apply Neumann BC: right edge equals its neighbor.
+  5. Store snapshots periodically for animation.
+
+**Post-processing**
+- Snapshots are copied from GPU to CPU (cp.asnumpy).
+- FuncAnimation stitches the snapshots into a movie.
+- The result: a smooth visualization of how the heat profile evolves.
+
+---------------------------------------------------
+5. Interpretation:
+---------------------------------------------------
+
+The resulting animation shows:
+- Heat diffusing from the hot top edge and left sine wave.
+- Cold bottom edge keeps pulling the temperature down.
+- Right edge blocks heat flow → insulating boundary.
+- Over time, the plate approaches a steady-state solution 
+  balancing all these constraints.
+
+---------------------------------------------------
+
+

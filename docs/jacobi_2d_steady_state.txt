@@ -1,0 +1,60 @@
+2D Steady-State Heat Distribution (Jacobi Method)
+=================================================
+
+This document explains the Python code that simulates the steady-state heat distribution 
+on a 2D plate using the Jacobi method with GPU acceleration via CuPy.
+
+---------------------------------
+1. Overview
+---------------------------------
+The code computes the steady-state temperature distribution on a 2D square grid.
+One edge is kept at a constant high temperature (120 units) and the other edges are at 0 units.
+The Jacobi method iteratively solves the heat equation until convergence.
+
+---------------------------------
+2. Libraries Used
+---------------------------------
+- CuPy: For GPU-based array operations, like NumPy but faster on CUDA GPUs.
+- Matplotlib: For visualizing the final temperature distribution as a heatmap.
+
+---------------------------------
+3. Key Parameters
+---------------------------------
+- V = 256 : Grid size (256 x 256)
+- max_iter = 10,000 : Maximum iterations for the Jacobi solver.
+- tol = 1e-5 : Convergence tolerance.
+
+---------------------------------
+4. Initialization
+---------------------------------
+- T = cp.zeros((V, V)) : Initial temperature field (all zeros).
+- T_new = cp.zeros_like(T) : New temperature values during iteration.
+- T[0, :] = 120 : Top boundary condition (hot edge).
+
+---------------------------------
+5. Jacobi Iteration Loop
+---------------------------------
+The loop updates interior grid points using the average of their neighbors.
+
+Main steps:
+- Update: T_new[1:-1, 1:-1] = (neighbors) / 4
+- Error: err = max(abs(T_new - T))
+- Converge: If err < tol → stop.
+- Swap: T, T_new = T_new, T
+
+---------------------------------
+6. Visualization
+---------------------------------
+After solving:
+- Convert T from GPU to CPU: T_cpu = cp.asnumpy(T)
+- Plot with plt.imshow(), cmap='hot', origin='lower'
+- Add colorbar, labels, title.
+- Show with plt.show()
+
+---------------------------------
+7. Output
+---------------------------------
+- Console: Prints convergence info (iteration number).
+- Visual: Shows a heatmap with the hot edge and smooth temperature drop.
+
+

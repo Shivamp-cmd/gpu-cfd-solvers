@@ -1,0 +1,114 @@
+2D Poisson Solver (Successive Over-Relaxation - SOR) on GPU
+===========================================================
+
+This document explains a Python code that numerically solves the 2D Poisson equation 
+using the Successive Over-Relaxation (SOR) method, GPU-accelerated via CuPy, and visualizes 
+the scalar field with Matplotlib.
+
+---------------------------------
+1. Mathematical Background
+---------------------------------
+The 2D Poisson equation is:
+   ∇²φ = b
+
+where:
+- ∇² is the Laplacian operator: 
+     ∇²φ = ∂²φ/∂x² + ∂²φ/∂y²
+- φ(x, y) is the scalar field of interest (e.g., electric potential, pressure, or temperature).
+- b(x, y) is the source term (e.g., charge density).
+
+It appears in physics, electrostatics, fluid dynamics, and heat transfer.
+
+Typical example:
+- Electrostatics: ∇²V = -ρ/ε₀  (V = potential, ρ = charge density)
+- Steady-state heat: ∇²T = -Q/k (T = temperature, Q = heat source)
+
+The Poisson equation generalizes Laplace's equation (b = 0) by including sources/sinks.
+
+---------------------------------
+2. Numerical Method: SOR
+---------------------------------
+- The domain is discretized with a finite difference grid.
+- The Laplacian is approximated using second-order central differences.
+- SOR is an accelerated Gauss-Seidel method. 
+  The relaxation factor ω > 1 speeds up convergence by over-correcting each update.
+
+Update:
+   φ_new = (1 - ω) * φ_old + ω * average of neighbors + source term
+
+---------------------------------
+3. Libraries Used
+---------------------------------
+- **CuPy:** GPU arrays, faster iterative solving for big grids.
+- **NumPy:** For mesh and CPU-side operations.
+- **Matplotlib:** For 2D contours.
+
+---------------------------------
+4. Domain Parameters
+---------------------------------
+- Nx, Ny = 256: Grid resolution.
+- Lx, Ly = 1.0: Physical size.
+- dx, dy: Grid spacing.
+
+---------------------------------
+5. Solver Setup
+---------------------------------
+- ω = 1.4: Relaxation factor (1.0 = Gauss-Seidel).
+- tol = 1e-5: Residual tolerance.
+- max_iter = 5000: Iteration cap.
+
+---------------------------------
+6. Initialization
+---------------------------------
+- φ = zeros + ghost cells (Dirichlet BCs).
+- b = zeros + source at center: b[Nx//2, Ny//2] = 10.0.
+
+---------------------------------
+7. poisson_sor() Logic
+---------------------------------
+Loop:
+  1. Save old φ.
+  2. Update interior φ with neighbors & source.
+  3. Enforce φ = 0 at edges (Dirichlet).
+  4. Check for NaN/Inf (divergence).
+  5. Compute max difference |φ - φ_old|.
+  6. Print progress.
+  7. Break if converged.
+
+---------------------------------
+8. Post-Processing & Plot
+---------------------------------
+- Clip extreme φ values for stability.
+- Convert to NumPy for plotting.
+- Use contourf + plasma colormap.
+- Plot shows how φ spreads from source to boundaries.
+
+---------------------------------
+9. Physical Interpretation
+---------------------------------
+- The plot shows how a single point source spreads influence 
+  through the domain under steady state.
+- High φ near the source, smoothly decaying to zero at the edges.
+- Same math applies to:
+   - A point charge in electrostatics.
+   - Heat diffusing from a point heater.
+   - Steady fluid pressure in porous media.
+
+---------------------------------
+10. Expected Output
+---------------------------------
+- Console: Residuals every 100 iterations.
+- Plot: Smooth, radially symmetric contours.
+- Divergence message if NaN/Inf appears.
+
+---------------------------------
+Key Learning:
+---------------------------------
+This simple project shows:
+ Discretizing PDEs with finite differences  
+ Iterative solvers for elliptic equations  
+ Using SOR to accelerate Gauss-Seidel  
+ How GPUs (CuPy) massively speed up numerical solvers  
+ Basic scientific visualization
+
+Perfect for an undergrad-level computational physics, fluid dynamics, or numerical methods portfolio!

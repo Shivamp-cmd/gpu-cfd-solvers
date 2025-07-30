@@ -1,0 +1,109 @@
+1D Unsteady Heat Conduction in a Rod (GPU-Accelerated)
+=======================================================
+
+This document describes a Python script that simulates transient heat conduction 
+in a one-dimensional rod using an explicit finite difference method. It runs 
+entirely on the GPU with CuPy, allowing high-resolution time-stepping, and visualizes 
+the full spacetime evolution with Matplotlib.
+
+---------------------------------------------------
+1. Governing Equation: 1D Transient Heat Equation
+---------------------------------------------------
+
+The physical process is governed by the parabolic PDE:
+
+    ∂T/∂t = α ∂²T/∂x²
+
+Where:
+- T(x, t): temperature at position x and time t.
+- α (alpha): thermal diffusivity [m²/s].
+
+**Interpretation**
+- The LHS (∂T/∂t): how fast the temperature changes at each point.
+- The RHS (α ∂²T/∂x²): the curvature of the temperature profile → represents 
+  how heat diffuses due to local gradients.
+
+**Heat conduction in a rod** is a textbook example for teaching:
+- Diffusion processes.
+- Stability conditions in numerical methods.
+- The concept of thermal penetration depth.
+
+---------------------------------------------------
+2. Numerical Method: FTCS Finite Difference
+---------------------------------------------------
+
+To solve the PDE numerically:
+- Divide the rod into Nx grid points → spacing Δx.
+- Advance in time with step size Δt.
+
+The Forward-Time, Central-Space (FTCS) update rule for interior points is:
+
+    Tᵢⁿ⁺¹ = Tᵢⁿ + r ( Tᵢ₊₁ⁿ − 2 Tᵢⁿ + Tᵢ₋₁ⁿ )
+
+Where:
+- i: spatial index.
+- n: time index.
+- r = α Δt / Δx²: dimensionless parameter controlling numerical stability.
+
+**Stability constraint**:
+  For the explicit scheme, r ≤ 0.5. This ensures the numerical diffusion matches 
+  the physical diffusion, preventing oscillations or blow-up.
+
+This is implemented in the code as:
+
+    T_new[1:-1] = T[1:-1] + r * ( T[2:] - 2*T[1:-1] + T[:-2] )
+
+---------------------------------------------------
+3. Initial and Boundary Conditions
+---------------------------------------------------
+
+ **Initial condition**:  
+- The rod starts at T = 0 everywhere except for a single hot spike at the center:
+
+      T[Nx // 2] = 100.0
+
+- Physically: this represents a sudden point heat source.
+
+**Dirichlet BCs (Fixed Ends)**:
+- Ends of the rod are held at constant temperature T = 0 → heat can flow out freely.
+- Numerically:
+
+      T_new[0] = 0
+      T_new[-1] = 0
+
+---------------------------------------------------
+4. Code Structure: How It Works
+---------------------------------------------------
+
+**Grid and Parameters**
+- L: length of the rod.
+- Nx: number of grid points → defines Δx.
+- α: thermal diffusivity.
+- dt: time step, chosen so r ≤ 0.5.
+- Nt: total number of time steps.
+
+**Arrays**
+- T: CuPy array for current temperature.
+- T_new: stores updated values each step.
+- T_record: 2D CuPy array to record temperature profile at each step for plotting.
+
+**Time-Stepping Loop**
+- For each step:
+  1. Update interior points using FTCS.
+  2. Apply boundary conditions.
+  3. Update T → T_new.
+  4. Store snapshot in T_record.
+
+**Post-Processing**
+- Transfer T_record to CPU (NumPy) for plotting.
+- Use `plt.imshow` to generate a 2D spacetime diagram:
+
+    - x-axis: position along rod.
+    - y-axis: time.
+    - color: temperature.
+
+This shows heat diffusing outward symmetrically from the center spike, 
+gradually flattening towards the cold ends.
+
+
+
