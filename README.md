@@ -65,5 +65,5 @@ note: |
   Feel free to adapt, expand, or port them to other frameworks.
 
 repository:
-  homepage: https://github.com/YourUsername/GPU_Numerical_Solvers
-  issues: https://github.com/YourUsername/GPU_Numerical_Solvers/issues
+  homepage: https://github.com/Shivamp-cmd/GPU_Numerical_Solvers
+  issues: https://github.com/Shivamp-cmd/GPU_Numerical_Solvers/issues
